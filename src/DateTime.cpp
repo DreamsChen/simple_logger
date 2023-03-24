@@ -259,7 +259,7 @@ namespace simple_logger
 
         char buff[32] = { 0 };
         int len = (int)strftime(buff, sizeof(buff), "%Y-%m-%d %H:%M:%S", &localTm);
-        Sprintf(buff + len, sizeof(buff) - len, ".%u", milliSecond);
+        Sprintf(buff + len, sizeof(buff) - len, ".%03u", milliSecond);
         return std::string(buff);
     }
 
