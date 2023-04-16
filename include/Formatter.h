@@ -53,6 +53,10 @@ namespace simple_logger
         FormatExpand(s, fmt, args...);
         return s.str();
     }
+
+#define FORMAT simple_logger::format
+#else
+#define FORMAT std::format    
 #endif
 }
 #endif // !FORMATTER_H

@@ -26,11 +26,11 @@
 #include "Formatter.h"
 
 
-#define DBG_TRACE(log, fmt, ...) log.WriteLine(LogLevel::Debug, __FILE__, __LINE__, __FUNCTION__, format(fmt, ##__VA_ARGS__))
-#define DBG_INFO(log, fmt, ...) log.WriteLine(LogLevel::Info, __FILE__, __LINE__, __FUNCTION__, format(fmt, ##__VA_ARGS__))
-#define DBG_WARN(log, fmt, ...) log.WriteLine(LogLevel::Warn, __FILE__, __LINE__, __FUNCTION__, format(fmt, ##__VA_ARGS__))
-#define DBG_ERROR(log, fmt, ...) log.WriteLine(LogLevel::Error, __FILE__, __LINE__, __FUNCTION__, format(fmt, ##__VA_ARGS__))
-#define DBG_FATAL(log, fmt, ...) log.WriteLine(LogLevel::Fatal, __FILE__, __LINE__, __FUNCTION__, format(fmt, ##__VA_ARGS__))
+#define DBG_TRACE(log, fmt, ...) log.WriteLine(LogLevel::Debug, __FILE__, __LINE__, __FUNCTION__, FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_INFO(log, fmt, ...) log.WriteLine(LogLevel::Info, __FILE__, __LINE__, __FUNCTION__, FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_WARN(log, fmt, ...) log.WriteLine(LogLevel::Warn, __FILE__, __LINE__, __FUNCTION__, FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_ERROR(log, fmt, ...) log.WriteLine(LogLevel::Error, __FILE__, __LINE__, __FUNCTION__, FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_FATAL(log, fmt, ...) log.WriteLine(LogLevel::Fatal, __FILE__, __LINE__, __FUNCTION__, FORMAT(fmt, ##__VA_ARGS__))
 
 // micro definition for time performent evaluation 
 #define START_TIME() Now _begin = GetCurrentTime();

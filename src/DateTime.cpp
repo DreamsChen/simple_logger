@@ -63,10 +63,11 @@ namespace simple_logger
         va_list argList;
         va_start(argList, fmt);
 
-#ifdef linux
-        ret = vsscanf(buffer, fmt, argList);
-#else 
+#if _MSC_VER
         ret = vsscanf_s(buffer, fmt, argList);
+#else 
+        
+        ret = vsscanf(buffer, fmt, argList);
 #endif
         va_end(argList);
 
