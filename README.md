@@ -1,4 +1,4 @@
-Simple logger lib writen by C++
+Simple logger lib writen with C++
 =========================
 - author：Dreams chen
 - first release: 2023-03-23

@@ -180,6 +180,7 @@ namespace simple_logger
             return;
         }
 
+        std::unique_lock<std::mutex> lock(queMutex);
         std::cout << msg;
     }
 
@@ -205,6 +206,7 @@ namespace simple_logger
             return;
         }
 
+        std::unique_lock<std::mutex> lock(queMutex);
         userWriter->Write(msg);
     }
 
