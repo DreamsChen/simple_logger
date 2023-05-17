@@ -22,15 +22,18 @@
 #include <fstream>
 #include <thread>
 #include <mutex>
+#include <memory>
 #include <queue>
+#include <unordered_map>
+#include <unordered_set>
 #include "Formatter.h"
 
 
-#define DBG_TRACE(log, fmt, ...) log.WriteLine(LogLevel::Debug, __FILE__, __LINE__, __FUNCTION__, FORMAT(fmt, ##__VA_ARGS__))
-#define DBG_INFO(log, fmt, ...) log.WriteLine(LogLevel::Info, __FILE__, __LINE__, __FUNCTION__, FORMAT(fmt, ##__VA_ARGS__))
-#define DBG_WARN(log, fmt, ...) log.WriteLine(LogLevel::Warn, __FILE__, __LINE__, __FUNCTION__, FORMAT(fmt, ##__VA_ARGS__))
-#define DBG_ERROR(log, fmt, ...) log.WriteLine(LogLevel::Error, __FILE__, __LINE__, __FUNCTION__, FORMAT(fmt, ##__VA_ARGS__))
-#define DBG_FATAL(log, fmt, ...) log.WriteLine(LogLevel::Fatal, __FILE__, __LINE__, __FUNCTION__, FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_TRACE(log, fmt, ...) log.WriteLine(LogLevel::Debug, 0, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_INFO(log, fmt, ...) log.WriteLine(LogLevel::Info, 0, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_WARN(log, fmt, ...) log.WriteLine(LogLevel::Warn, 0, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_ERROR(log, fmt, ...) log.WriteLine(LogLevel::Error, 0, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_FATAL(log, fmt, ...) log.WriteLine(LogLevel::Fatal, 0, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
 
 // micro definition for time performent evaluation 
 #define START_TIME() Now _begin = GetCurrentTime();
@@ -55,7 +58,8 @@ namespace simple_logger
         None = 0,
         Console = 1,
         LogFile = 2,
-        UserDefined = 4,
+        RemoteServer = 4,
+        UserDefined = 8,
     };
 
     enum class WriteMode
@@ -83,7 +87,7 @@ namespace simple_logger
     class Log
     {
     public:
-        Log(const std::string& dir, const std::string& fileName, uint outputFlag = static_cast<uint>(OutputType::Console), bool detailMode = false);
+        Log(const std::string& dir, const std::string& fileName);
         Log(const Log& log) = delete;
         Log(const Log&& log) = delete;
         Log& operator=(const Log& log) = delete;
@@ -102,29 +106,68 @@ namespace simple_logger
         void SetLogSwitchOff(LogLevel level);
         void SetDetailMode(bool enable);
         bool GetDetailMode() const;
-        void SetUserWriter(UserDefinedWriter* userWriter);
+        void SetColorfulFont(bool enable);
+        bool IsColorfulFont() const;
+
+        void AddModule(int module, const std::string& name);
+        void AddModule(const std::unordered_map<int, std::string>& modules);
+        void RemoveModule(int module);
+        void ClearAllModule();
+
+        void AddAndFilter(const std::string& filterString);
+        void AddAndFilter(const std::list<std::string>& filterList);
+        void ClearAndFilter(const std::string& filterString);
+        void ClearAndFilter(const std::list<std::string>& filterList);
+        void ClearAndFilter();
+        
+        void AddOrFilter(const std::string& filterString);
+        void AddOrFilter(const std::list<std::string>& filterList);
+        void ClearOrFilter(const std::string& filterString);
+        void ClearOrFilter(const std::list<std::string>& filterList);
+        void ClearOrFilter();
+
+        void AddModuleFilter(int module);
+        void AddModuleFilter(const std::list<int>& moduleList);
+        void ClearModuleFilter(int module);
+        void ClearModuleFilter(const std::list<int>& moduleList);
+        void ClearModuleFilter();
+
+        void ClearAllFilter();
+
+        void SetUserWriter(std::shared_ptr<UserDefinedWriter>& userWriter);
+        void SetRemoteWriter(std::shared_ptr<UserDefinedWriter>& remoteWriter);
         bool IsLogQueEmpty() const;
         
-        void Write(LogLevel level, const char* fileName, int line, const char* funcName, const std::string& msg);
-        void WriteLine(LogLevel level, const char* fileName, int line, const char* funcName, const std::string& msg);
+        void Write(LogLevel level, int module, const char* fileName, int line, const char* funcName, std::thread::id threadId, const std::string& msg);
+        void WriteLine(LogLevel level, int module, const char* fileName, int line, const char* funcName, std::thread::id threadId, const std::string& msg);
 
     private:
-        std::string FormatLog(LogLevel level, const std::string& fileName, int line, const std::string& funcName, const std::string& info);
-        void Write(LogLevel level, WriteMode writeMode, const char* fileName, int line, const char* funcName, const std::string& msg);
+        std::string FormatLog(LogLevel level, int module, const std::string& fileName, int line, const std::string& funcName, uint threadId, const std::string& info);
+        void Write(LogLevel level, WriteMode writeMode, int module, const char* fileName, int line, const char* funcName, uint threadId, const std::string& msg);
+
+        bool NeedFilter(int module, const std::string& msg);
+        bool NeedFilter(int module);
+        bool NeedFilterWithAndRule(const std::string& msg);
+        bool NeedFilterWithOrRule(const std::string& msg);
+
         void WriteToConsole(const std::string& msg);
         void WriteToLogFile(const std::string& msg);
         void WriteToUserWriter(const std::string& msg); 
+        void WriteToRemoteWriter(const std::string& msg);
         const char* LogLevelToStr(LogLevel level);
         void WritingWorker();
         void UpdateCurrentDate(const std::string& currentTime);
 
+        std::string GetModuleName(int module);
+
     private:
-        uint outputFlag;
+        uint outputFlag = static_cast<uint>(OutputType::Console);
         int logFlag = (uint)LogLevel::Info | (uint)LogLevel::Warn | (uint)LogLevel::Error | (uint)LogLevel::Fatal;
-        bool detailMode;
+        bool detailMode = true;
         bool exit = false;
         bool dateChanged = false;
-
+        bool colorfulFont = true;          // only use in console terminal.
+        
         std::string logDir;
         std::string logFileName;
         std::string currentDate;
@@ -132,9 +175,15 @@ namespace simple_logger
         std::thread writerThread;
         std::mutex writeMutex;
         std::mutex queMutex;
+        std::mutex filterMutex;
+        std::unordered_map<int, std::string> modulesMap;
+        std::list<std::string> andFilters;
+        std::list<std::string> orFilters;
+        std::unordered_set<int> moduleFilters;
 
         std::ofstream writer;
-        UserDefinedWriter* userWriter = nullptr;
+        std::shared_ptr<UserDefinedWriter> userWriter = nullptr;
+        std::shared_ptr<UserDefinedWriter> remoteWriter = nullptr;
     };
 };
 

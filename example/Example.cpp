@@ -38,7 +38,7 @@ int main()
 
     string dir{ filesystem::current_path().generic_string()};
     string fileName{ "test.log" };
-    Log log(dir, fileName, static_cast<uint>(OutputType::UserDefined) | static_cast<uint>(OutputType::LogFile), true);
+    Log log(dir, fileName);
     MyWriter* writer = new MyWriter();
     log.SetUserWriter(writer);
 
