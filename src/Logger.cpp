@@ -27,6 +27,13 @@
 
 namespace simple_logger
 {
+    const char* FONT_STYLE_RED = "\033[31m";
+    const char* FONT_STYLE_GREEN = "\033[32m";
+    const char* FONT_STYLE_YELLOW = "\033[33m";
+    const char* FONT_STYLE_PURPLE = "\033[35m";
+    const char* FONT_STYLE_CYAN = "\033[36m";
+    const char* FONT_STYLE_CLEAR = "\033[0m";
+
     Log::Log(const std::string& dir, const std::string& fileName) : m_logDir(dir + "/log/"), m_logFileName(fileName)
     {
         m_currentDate = GetLocalDate();
@@ -43,21 +50,7 @@ namespace simple_logger
 
     Log::~Log()
     {
-        m_exit = true;
-
-        if (m_writerThread.joinable()) {
-            m_writerThread.join();
-        }
-
-        m_fileWriter.close();
-
-        if (m_userWriter != nullptr) {
-            m_userWriter->Close();
-        }
-
-        if (m_remoteWriter != nullptr) {
-            m_remoteWriter->Close();
-        }
+        Close();
     }
 
     uint Log::GetOutputFlag() const
@@ -373,8 +366,15 @@ namespace simple_logger
             return;
         }
 
-        std::unique_lock<std::mutex> lock(m_queMutex);
-        std::cout << msg;
+        if (!m_colorfulFont) {
+            std::unique_lock<std::mutex> lock(m_writeMutex);
+            std::cout << msg;
+            return;
+        }
+
+        std::string coloredMsg = FORMAT("{}{}{}", GetFontColor(msg[25]), msg, FONT_STYLE_CLEAR);
+        std::unique_lock<std::mutex> lock(m_writeMutex);
+        std::cout << coloredMsg;
     }
 
     void Log::WriteToLogFile(const std::string& msg)
@@ -452,6 +452,47 @@ namespace simple_logger
         std::string logStr = std::move(m_logQue.front());
         m_logQue.pop();
         return logStr;
+    }
+
+    void Log::Close()
+    {
+        if (m_exit) {
+            return;
+        }
+
+        m_exit = true;
+
+        if (m_writerThread.joinable()) {
+            m_writerThread.join();
+        }
+
+        m_fileWriter.close();
+
+        if (m_userWriter != nullptr) {
+            m_userWriter->Close();
+        }
+
+        if (m_remoteWriter != nullptr) {
+            m_remoteWriter->Close();
+        }
+    }
+
+    std::string Log::GetFontColor(char levelFlag)
+    {
+        switch (levelFlag) {
+            case 'D':   // debug level
+                return FONT_STYLE_GREEN;
+            case 'I':   // info level
+                return FONT_STYLE_CYAN;
+            case 'W':   // warning level
+                return FONT_STYLE_YELLOW;
+            case 'E':   // error level
+                return FONT_STYLE_RED;
+            case 'F':   // fatal level
+                return FONT_STYLE_PURPLE;
+            default:
+                return FONT_STYLE_CLEAR;
+        }
     }
 }
 

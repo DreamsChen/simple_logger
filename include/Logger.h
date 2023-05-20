@@ -39,11 +39,11 @@
 #define DBG_FATAL(log, mod, logStr) log.Write(simple_logger::LogLevel::Fatal, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
 
 // used directly.
-//#define DBG_DEBUG(log, mod, fmt, ...) log.WriteLine(LogLevel::Debug, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-//#define DBG_INFO(log, mod, fmt, ...) log.WriteLine(LogLevel::Info, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-//#define DBG_WARN(log, mod, fmt, ...) log.WriteLine(LogLevel::Warn, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-//#define DBG_ERROR(log, mod, fmt, ...) log.WriteLine(LogLevel::Error, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-//#define DBG_FATAL(log, mod, fmt, ...) log.WriteLine(LogLevel::Fatal, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define LOG_DEBUG(log, mod, fmt, ...) log.WriteLine(LogLevel::Debug, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define LOG_INFO(log, mod, fmt, ...) log.WriteLine(LogLevel::Info, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define LOG_WARN(log, mod, fmt, ...) log.WriteLine(LogLevel::Warn, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define LOG_ERROR(log, mod, fmt, ...) log.WriteLine(LogLevel::Error, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define LOG_FATAL(log, mod, fmt, ...) log.WriteLine(LogLevel::Fatal, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
 
 // micro definition for time performent evaluation 
 #define START_TIME() Now _begin = GetCurrentTime();
@@ -54,6 +54,7 @@
 
 namespace simple_logger
 {
+
     enum class LogLevel
     {
         Debug = 1,
@@ -84,13 +85,8 @@ namespace simple_logger
     {
     public:
         virtual ~UserDefinedWriter() = default;
-    public:
-        virtual void Write(const char* str) = 0;
-        void Write(const std::string& str)
-        {
-            Write(str.c_str());
-        }
-
+    public:        
+        virtual void Write(const std::string& str) = 0;
         virtual void Close() {};
     };
 
@@ -150,6 +146,9 @@ namespace simple_logger
         
         void Write(LogLevel level, int module, const char* fileName, int line, const char* funcName, std::thread::id threadId, const std::string& msg, WriteMode writeMode = WriteMode::Newline);
 
+        // Close function should be called munually before the program exit.
+        void Close();
+
     private:
         std::string FormatLog(LogLevel level, int module, const std::string& fileName, int line, const std::string& funcName, uint threadId, const std::string& info);
         void Write(LogLevel level, WriteMode writeMode, int module, const char* fileName, int line, const char* funcName, uint threadId, const std::string& msg);
@@ -169,6 +168,7 @@ namespace simple_logger
 
         std::string GetModuleName(int module);
         std::string PopLogStr();
+        std::string GetFontColor(char levelFlag);
 
     private:
         uint m_outputFlag = static_cast<uint>(OutputType::LogFile);
