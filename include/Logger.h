@@ -99,7 +99,7 @@ namespace simple_logger
         Log& operator=(const Log& log) = delete;
         Log& operator=(const Log&& log) = delete;
 
-        virtual ~Log();
+        ~Log();
 
     public:
         uint GetOutputFlag() const;
