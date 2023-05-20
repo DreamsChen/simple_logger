@@ -41,7 +41,7 @@ int main()
 }
 ```
 In console terminal, it looks like the below:
-![](https://github.com/DreamsChen/simple_logger/blob/main/res/print2console.png?raw=true)
+![](https://github.com/DreamsChen/simple_logger/raw/main/res/print2console.png)
 
 
 - Use simple logger in multiple threads environment
