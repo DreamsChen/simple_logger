@@ -41,7 +41,7 @@ int main()
 }
 ```
 In console terminal, it looks like the below:
-![](/res/print2console.png")
+![pic](./res/print2console.png)
 
 
 - Use simple logger in multiple threads environment
