@@ -17,9 +17,6 @@
 #include "Logger.h"
 #include "DateTime.h"
 
-using namespace std;
-using namespace simple_logger;
-
 enum class Module 
 {
     Example = 0,
@@ -40,7 +37,7 @@ public:
         return context;
     }
 
-    inline Log& GetLogger()
+    inline simple_logger::Log& GetLogger()
     {
         return m_log;
     }
@@ -61,7 +58,7 @@ public:
     }
 
 private:
-    ExampleContext() : m_log(filesystem::current_path().generic_string(), "test.log") {};
+    ExampleContext() : m_log(std::filesystem::current_path().generic_string(), "test.log") {};
     ExampleContext(const ExampleContext&) = delete;
     ExampleContext(ExampleContext&&) = delete;
     ExampleContext& operator=(const ExampleContext&) = delete;
@@ -86,7 +83,7 @@ private:
 // user defined writer example:
 // define a textbox writer in QT GUI application.
 // 
-//class TextBoxWriter : public QObject, public UserDefinedWriter
+//class TextBoxWriter : public QObject, public simple_logger::UserDefinedWriter
 //{
 //    Q_OBJECT;
 //
@@ -98,7 +95,7 @@ private:
 //    virtual ~TextBoxWriter() { m_window = nullptr; }
 //
 //public:
-//    virtual void Write(const string& str) override
+//    virtual void Write(const std::string& str) override
 //    {
 //        if (m_window != nullptr) {
 //            emit ReceiveNewLog(QString(str.c_str()));
@@ -141,7 +138,7 @@ private:
 //: QMainWindow(parent)
 //, ui(new Ui::MainWindow)
 //, m_textboxWriter(std::make_shared<TextBoxWriter>(this))
-//, m_log(filesystem::current_path().string(), "WaferRobot.log")
+//, m_log(std::filesystem::current_path().string(), "app.log")
 //{
 //    ui->setupUi(this);
 //    connect(m_textboxWriter.get(), &TextBoxWriter::ReceiveNewLog, this, &MainWindow::OnReceiveNewLog, Qt::ConnectionType::QueuedConnection);
@@ -157,47 +154,48 @@ private:
 
 int main()
 {
-    class MyWriter : public UserDefinedWriter
+    class MyWriter : public simple_logger::UserDefinedWriter
     {
     public:
         virtual ~MyWriter()
         {
-            cout << "Destructor MyWriter." << endl;
+            std::cout << "Destructor MyWriter." << std::endl;
         }
 
     public:
-        virtual void Write(const string& str) override
+        virtual void Write(const std::string& str) override
         {
-            cout << "UserDefinedWriter: " << str;
+            std::cout << "UserDefinedWriter: " << str;
         }
     };
 
 
-    Log& log = ExampleContext::GetInstance().GetLogger();
-    //log.SetOutputTypeOn(OutputType::Console);
-    //log.SetOutputTypeOff(OutputType::Console);
-    log.SetLogSwitchOn(LogLevel::Debug);
+    simple_logger::Log& log = ExampleContext::GetInstance().GetLogger();
+    log.SetOutputTypeOn(simple_logger::OutputType::Console);
+    //log.SetOutputTypeOff(simple_logger::OutputType::Console);
+    log.SetLogSwitchOn(simple_logger::LogLevel::Debug);
     log.SetDetailMode(true);
-    MyWriter* writer = new MyWriter();
-    log.SetUserWriter(writer);
+
+    //std::shared_ptr<simple_logger::UserDefinedWriter> writer = std::make_shared<MyWriter>();
+    //log.SetUserWriter(writer);
 
     int loopCount = 10;
-    thread t1([&log, loopCount]() {
+    std::thread t1([&log, loopCount]() {
         for (int i = 0; i < loopCount; ++i) {
             EXAMPLE_DEBUG("######T1: hello logger, i={}", i);
             EXAMPLE_INFO("######T1: hello logger, i={}", i);
             EXAMPLE_WARN("######T1: hello logger, i={}", i);
-            EXAMPLE_ERROR("######T1: hello logger, i={}", string("sss"));
+            EXAMPLE_ERROR("######T1: hello logger, i={}", std::string("sss"));
             EXAMPLE_FATAL("######T1: hello logger, i={}", 3.1415);
         }
         });
 
-    thread t2([&log, loopCount]() {
+    std::thread t2([&log, loopCount]() {
         for (int i = 0; i < loopCount; ++i) {
             EXAMPLE_DEBUG("******T2: hello logger, i={}", i);
             EXAMPLE_INFO("******T2: hello logger, i={}", i);
             EXAMPLE_WARN("******T2: hello logger, i={}", i);
-            EXAMPLE_ERROR("******T2: hello logger, i={}", string("sss"));
+            EXAMPLE_ERROR("******T2: hello logger, i={}", std::string("sss"));
             EXAMPLE_FATAL("******T2: hello logger, i={}", 3.1415);
         }
         });
