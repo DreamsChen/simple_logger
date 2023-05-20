@@ -31,8 +31,8 @@ int main()
 
     LOG_TRACE(log, 0, "hello logger, intVal={}", 1);
     LOG_INFO(log, 0, "hello logger, doubleVal={}", 3.14);
-    LOG_WARN(log, 0, "hello logger, stringVal={}", "simple logger");
-    LOG_ERROR(log, 0, "hello logger, stringVal={}", string("std::string"));
+    LOG_WARN(log, 0, "hello logger, boolValue={}", true);
+    LOG_ERROR(log, 0, "hello logger, stringVal={}", "std::string");
     LOG_FATAL(log, 0, "hello logger");
 
     while (!log.IsLogQueEmpty()) {
@@ -92,8 +92,8 @@ int main()
 
     LOG_TRACE(log, 0, "hello logger, intVal={}", 1);
     LOG_INFO(log, 0, "hello logger, doubleVal={}", 3.14);
-    LOG_WARN(log, 0, "hello logger, stringVal={}", "simple logger");
-    LOG_ERROR(log, 0, "hello logger, stringVal={}", string("std::string"));
+    LOG_WARN(log, 0, "hello logger, boolVal={}", true);
+    LOG_ERROR(log, 0, "hello logger, stringVal={}", "std::string");
     LOG_FATAL(log, 0, "hello logger");
 
     while (!log.IsLogQueEmpty()) {
@@ -215,9 +215,7 @@ MainWindow::MainWindow(QWidget *parent)
 , ui(new Ui::MainWindow)
 , m_textboxWriter(std::make_shared<TextBoxWriter>(this))
 , m_log(AppContext::GetInstance().GetLogger())
-{
-    
-    connect(m_textboxWriter.get(), &TextBoxWriter::ReceiveNewLog, this, &MainWindow::OnReceiveNewLog, Qt::ConnectionType::QueuedConnection);
+{        
     ui->setupUi(this);
     ui->setupUi(this);
 
@@ -227,8 +225,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     APP_TRACE("hello logger, intVal={}", 1);
     APP_INFO("hello logger, doubleVal={}", 3.14);
-    APP_WARN("hello logger, stringVal={}", "simple logger");
-    APP_ERROR("hello logger, stringVal={}", string("std::string"));
+    APP_WARN("hello logger, boolValue={}", true);
+    APP_ERROR("hello logger, stringVal={}", "std::string");
     APP_FATAL("hello logger");
 }
  
