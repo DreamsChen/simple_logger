@@ -19,7 +19,7 @@
 #include <strstream>
 #include "DateTime.h"
 
-#ifdef MSC_VER 
+#ifdef _MSC_VER 
 #define PATH_SEPERATOR "\\"
 #else
 #define PATH_SEPERATOR "/"
@@ -27,206 +27,208 @@
 
 namespace simple_logger
 {
-    Log::Log(const std::string& dir, const std::string& fileName) : logDir(dir + "/log/"), logFileName(fileName)
+    Log::Log(const std::string& dir, const std::string& fileName) : m_logDir(dir + "/log/"), m_logFileName(fileName)
     {
-        currentDate = GetLocalDate();
-        std::string filePath = logDir + currentDate + "_" + fileName;
+        m_currentDate = GetLocalDate();
+        std::string filePath = m_logDir + m_currentDate + "_" + fileName;
 
-        if (!std::filesystem::exists(logDir)) {
-            std::filesystem::create_directory(std::filesystem::path(logDir));
+        if (!std::filesystem::exists(m_logDir)) {
+            std::filesystem::create_directory(std::filesystem::path(m_logDir));
         }
 
-        writer.open(filePath, std::ios::out | std::ios::app);
+        m_fileWriter.open(filePath, std::ios::out | std::ios::app);
 
-        writerThread = std::thread(&Log::WritingWorker, this);
+        m_writerThread = std::thread(&Log::WritingWorker, this);
     }
 
     Log::~Log()
     {
-        exit = true;
+        m_exit = true;
 
-        if (writerThread.joinable()) {
-            writerThread.join();
+        if (m_writerThread.joinable()) {
+            m_writerThread.join();
         }
 
-        writer.close();
-        if (userWriter != nullptr) {
-            userWriter->Close();
+        m_fileWriter.close();
+
+        if (m_userWriter != nullptr) {
+            m_userWriter->Close();
         }
 
-        if (remoteWriter != nullptr) {
-            remoteWriter->Close();
+        if (m_remoteWriter != nullptr) {
+            m_remoteWriter->Close();
         }
     }
 
     uint Log::GetOutputFlag() const
     {
-        return outputFlag;
+        return m_outputFlag;
     }
 
     bool Log::IsOutputTypeOn(OutputType type) const
     {
-        return (outputFlag & ((uint)type)) != 0;
+        return (m_outputFlag & ((uint)type)) != 0;
     }
 
     void Log::SetOutputTypeOn(OutputType outputType)
     {
-        outputFlag |= (uint)outputType;
+        m_outputFlag |= (uint)outputType;
     }
 
     void Log::SetOutputTypeOff(OutputType outputType)
     {
-        outputFlag &= ~(uint)outputType;
+        m_outputFlag &= ~(uint)outputType;
     }
 
     void Log::DisableLog()
     {
-        outputFlag = 0;
+        m_outputFlag = 0;
     }
 
     bool Log::IsLogSwitchOn(LogLevel level) const
     {
-        return (logFlag & (uint)level) != 0;
+        return (m_logFlag & (uint)level) != 0;
     }
 
     void Log::SetLogSwitchOn(LogLevel level)
     {
-        logFlag |= (uint)level;
+        m_logFlag |= (uint)level;
     }
 
     void Log::SetLogSwitchOff(LogLevel level)
     {
-        logFlag &= ~(uint)level;
+        m_logFlag &= ~(uint)level;
     }
 
     void Log::SetDetailMode(bool enable)
     {
-        detailMode = enable;
+        m_detailMode = enable;
     }
 
-    bool Log::GetDetailMode() const
+    bool Log::IsDetailMode() const
     {
-        return detailMode;
+        return m_detailMode;
     }
 
     void Log::SetColorfulFont(bool enable)
     {
-        colorfulFont = enable;
+        m_colorfulFont = enable;
     }
 
     bool Log::IsColorfulFont() const
     {
-        return colorfulFont;
+        return m_colorfulFont;
     }
 
     void Log::AddModule(int module, const std::string& name)
     {
-        modulesMap[module] = name;
+        std::lock_guard<std::mutex> lock(m_moduleMutex);
+        m_modulesMap[module] = name;
     }
 
     void Log::AddModule(const std::unordered_map<int, std::string>& modules)
     {
-        std::copy(modules.begin(), modules.end(), std::inserter(modulesMap, modulesMap.end()));
+        std::lock_guard<std::mutex> lock(m_moduleMutex);
+        std::copy(modules.begin(), modules.end(), std::inserter(m_modulesMap, m_modulesMap.end()));
     }
 
     void Log::RemoveModule(int module)
     {
-        modulesMap.erase(module);
+        std::lock_guard<std::mutex> lock(m_moduleMutex);
+        m_modulesMap.erase(module);
     }
 
     void Log::ClearAllModule()
     {
-        modulesMap.clear();
+        std::lock_guard<std::mutex> lock(m_moduleMutex);
+        m_modulesMap.clear();
     }
 
     void Log::AddAndFilter(const std::string& filterString)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        andFilters.push_back(filterString);
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        m_andFilters.insert(filterString);
     }
 
-    void Log::AddAndFilter(const std::list<std::string>& filterList)
+    void Log::AddAndFilter(const std::unordered_set<std::string>& filterList)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        std::copy(filterList.begin(), filterList.end(), std::back_inserter(andFilters));
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        std::copy(filterList.begin(), filterList.end(), std::inserter(m_andFilters, m_andFilters.end()));
     }
 
     void Log::ClearAndFilter(const std::string& filterString)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        andFilters.erase(std::remove_if(andFilters.begin(), andFilters.end(), [&filterString](const std::string& currentFilterString) { return currentFilterString == filterString; }));
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        m_andFilters.erase(filterString);
     }
 
-    void Log::ClearAndFilter(const std::list<std::string>& filterList)
+    void Log::ClearAndFilter(const std::unordered_set<std::string>& filterList)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        std::for_each(andFilters.begin(), andFilters.end(), [this](const std::string& filterString) { ClearOrFilter(filterString); });
+        std::for_each(filterList.begin(), filterList.end(), [this](const std::string& filterString) { ClearAndFilter(filterString); });
     }
 
     void Log::ClearAndFilter()
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        andFilters.clear();
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        m_andFilters.clear();
     }
 
     void Log::AddOrFilter(const std::string& filterString)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        orFilters.push_back(filterString);
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        m_orFilters.insert(filterString);
     }
 
-    void Log::AddOrFilter(const std::list<std::string>& filterList)
+    void Log::AddOrFilter(const std::unordered_set<std::string>& filterList)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        std::copy(filterList.begin(), filterList.end(), std::back_inserter(orFilters));
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        std::copy(filterList.begin(), filterList.end(), std::inserter(m_orFilters, m_orFilters.end()));
     }
 
     void Log::ClearOrFilter(const std::string& filterString)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        orFilters.erase(std::remove_if(orFilters.begin(), orFilters.end(), [&filterString](const std::string& currentFilterString) { return currentFilterString == filterString; }));
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        m_orFilters.erase(filterString);
     }
 
-    void Log::ClearOrFilter(const std::list<std::string>& filterList)
+    void Log::ClearOrFilter(const std::unordered_set<std::string>& filterList)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        std::for_each(orFilters.begin(), orFilters.end(), [this](const std::string& filterString) { ClearOrFilter(filterString); });
+        std::for_each(filterList.begin(), filterList.end(), [this](const std::string& filterString) { ClearOrFilter(filterString); });
     }
 
     void Log::ClearOrFilter()
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        orFilters.clear();
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        m_orFilters.clear();
     }
 
     void Log::AddModuleFilter(int module)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        moduleFilters.insert(module);
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        m_moduleFilters.insert(module);
     }
 
-    void Log::AddModuleFilter(const std::list<int>& moduleList)
+    void Log::AddModuleFilter(const std::unordered_set<int>& moduleList)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        std::copy(moduleList.begin(), moduleList.end(), std::inserter(moduleFilters, moduleFilters.end()));
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        std::copy(moduleList.begin(), moduleList.end(), std::inserter(m_moduleFilters, m_moduleFilters.end()));
     }
 
     void Log::ClearModuleFilter(int module)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        std::erase_if(moduleFilters, [&module](int currentModule) { return currentModule == module; });
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        m_moduleFilters.erase(module);
     }
 
-    void Log::ClearModuleFilter(const std::list<int>& moduleList)
+    void Log::ClearModuleFilter(const std::unordered_set<int>& moduleList)
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
         std::for_each(moduleList.begin(), moduleList.end(), [this](int module) { ClearModuleFilter(module); });
     }
 
     void Log::ClearModuleFilter()
     {
-        std::lock_guard<std::mutex> lock(filterMutex);
-        moduleFilters.clear();
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        m_moduleFilters.clear();
     }
 
     void Log::ClearAllFilter()
@@ -238,28 +240,28 @@ namespace simple_logger
 
     bool Log::IsLogQueEmpty() const
     {
-        return logQue.empty();
+        return m_logQue.empty();
     }
 
     bool Log::NeedFilter(int module)
     {
-        if (moduleFilters.empty()) {
+        if (m_moduleFilters.empty()) {
             return false;
         }
 
-        std::lock_guard<std::mutex> lock(filterMutex);
-        return moduleFilters.find(module) != moduleFilters.end();
+        std::lock_guard<std::mutex> lock(m_filterMutex);
+        return m_moduleFilters.find(module) != m_moduleFilters.end();
     }
 
     bool Log::NeedFilterWithAndRule(const std::string& msg)
     {
-        if (andFilters.empty()) {
+        if (m_andFilters.empty()) {
             return false;
         }
 
         bool found = false;
-        std::unique_lock<std::mutex> lock(filterMutex);
-        for (const std::string& filter : andFilters) {
+        std::unique_lock<std::mutex> lock(m_filterMutex);
+        for (const std::string& filter : m_andFilters) {
             if (msg.find(filter) == std::string::npos) {
                 lock.unlock();
                 found = true;
@@ -272,13 +274,13 @@ namespace simple_logger
 
     bool Log::NeedFilterWithOrRule(const std::string& msg)
     {
-        if (orFilters.empty()) {
+        if (m_orFilters.empty()) {
             return false;
         }
 
         bool found = false;
-        std::unique_lock<std::mutex> lock(filterMutex);
-        for (const std::string& filter : orFilters) {
+        std::unique_lock<std::mutex> lock(m_filterMutex);
+        for (const std::string& filter : m_orFilters) {
             if (msg.find(filter) != std::string::npos) {
                 lock.unlock();
                 found = true;
@@ -294,7 +296,7 @@ namespace simple_logger
         return NeedFilter(module) || NeedFilterWithAndRule(msg) || NeedFilterWithOrRule(msg);
     }
 
-    void Log::Write(LogLevel level, int module, const char* fileName, int line, const char* funcName, std::thread::id threadId, const std::string& msg)
+    void Log::Write(LogLevel level, int module, const char* fileName, int line, const char* funcName, std::thread::id threadId, const std::string& msg, WriteMode writeMode)
     {
         if (NeedFilter(module, msg)) {
             return;
@@ -305,29 +307,15 @@ namespace simple_logger
         uint id;
         ss >> id;
 
-        Write(level, WriteMode::Append, module, fileName, line, funcName, id, msg);
-    }
-
-    void Log::WriteLine(LogLevel level, int module, const char* fileName, int line, const char* funcName, std::thread::id threadId, const std::string& msg)
-    {
-        if (NeedFilter(module, msg)) {
-            return;
-        }
-
-        std::stringstream ss;
-        ss << threadId;
-        uint id;
-        ss >> id;
-
-        Write(level, WriteMode::Newline, module, fileName, line, funcName, id, msg);
+        Write(level, writeMode, module, fileName, line, funcName, id, msg);
     }
 
     void Log::UpdateCurrentDate(const std::string& currentTime)
     {
         std::string date = currentTime.substr(0, 10);
-        if (date != currentDate) {
-            currentDate = date;
-            dateChanged = true;
+        if (date != m_currentDate) {
+            m_currentDate = date;
+            m_dateChanged = true;
         }
     }
 
@@ -336,17 +324,17 @@ namespace simple_logger
         std::string currentTime = GetLocalDateTimeWithMilliSecond();
         UpdateCurrentDate(currentTime);
 
-        if (!detailMode) {
-            return format("{} [{}][{}]: {}", currentTime, LogLevelToStr(level), GetModuleName(module), info);
+        if (!m_detailMode) {
+            return format("{} [{}] [{}]: {}", currentTime, LogLevelToStr(level), GetModuleName(module), info);
         }
 
-        return format("{} [{}][{}]{}(line: {}, method: {}, thread: {}): {}",
+        return format("{} [{}] [{}] [{}(line: {}, method: {}, thread: {})]: {}",
             currentTime, LogLevelToStr(level), GetModuleName(module), fileName.substr(fileName.find_last_of(PATH_SEPERATOR) + 1), line, funcName, threadId, info);
     }
 
     void Log::Write(LogLevel level, WriteMode writeMode, int module, const char* fileName, int line, const char* funcName, uint threadId, const std::string& msg)
     {
-        if (exit || !IsLogSwitchOn(level)) {
+        if (m_exit || !IsLogSwitchOn(level)) {
             return;
         }
 
@@ -355,25 +343,21 @@ namespace simple_logger
             str.append("\r\n");
         }
 
-        std::unique_lock<std::mutex> lock(queMutex);
-        logQue.emplace(str);
+        std::unique_lock<std::mutex> lock(m_queMutex);
+        m_logQue.emplace(str);
 
         return;
     }
 
     void Log::WritingWorker()
     {
-        while (!exit) {
-            std::unique_lock<std::mutex> lock(queMutex);
-            if (logQue.empty()) {
-                lock.unlock();
+        while (!m_exit) {
+            if (m_logQue.empty()) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(300));
                 continue;
             }
 
-            std::string logStr = logQue.front();
-            logQue.pop();
-            lock.unlock();
+            std::string logStr(PopLogStr());
 
             // Only one writing thread, no need to lock for the below action.
             WriteToConsole(logStr);
@@ -389,7 +373,7 @@ namespace simple_logger
             return;
         }
 
-        std::unique_lock<std::mutex> lock(queMutex);
+        std::unique_lock<std::mutex> lock(m_queMutex);
         std::cout << msg;
     }
 
@@ -399,42 +383,42 @@ namespace simple_logger
             return;
         }
 
-        if (dateChanged) {
-            writer.close();
-            writer.open(logDir + currentDate + "_" + logFileName, std::ios::out | std::ios::app);
-            dateChanged = false;
+        if (m_dateChanged) {
+            m_fileWriter.close();
+            m_fileWriter.open(m_logDir + m_currentDate + "_" + m_logFileName, std::ios::out | std::ios::app);
+            m_dateChanged = false;
         }
 
-        writer << msg;
-        writer.flush();
+        m_fileWriter << msg;
+        m_fileWriter.flush();
     }
 
     void Log::WriteToUserWriter(const std::string& msg)
     {
-        if (!IsOutputTypeOn(OutputType::UserDefined) || userWriter == nullptr) {
+        if (!IsOutputTypeOn(OutputType::UserDefined) || m_userWriter == nullptr) {
             return;
         }
 
-        userWriter->Write(msg);
+        m_userWriter->Write(msg);
     }
 
     void Log::WriteToRemoteWriter(const std::string& msg)
     {
-        if (!IsOutputTypeOn(OutputType::RemoteServer) || remoteWriter == nullptr) {
+        if (!IsOutputTypeOn(OutputType::RemoteServer) || m_remoteWriter == nullptr) {
             return;
         }
 
-        remoteWriter->Write(msg);
+        m_remoteWriter->Write(msg);
     }
 
-    void Log::SetUserWriter(std::shared_ptr<UserDefinedWriter>& writer)
+    void Log::SetUserWriter(std::shared_ptr<UserDefinedWriter>& m_fileWriter)
     {
-        userWriter = writer;
+        m_userWriter = m_fileWriter;
     }
 
-    void Log::SetRemoteWriter(std::shared_ptr<UserDefinedWriter>& writer)
+    void Log::SetRemoteWriter(std::shared_ptr<UserDefinedWriter>& m_fileWriter)
     {
-        remoteWriter = writer;
+        m_remoteWriter = m_fileWriter;
     }
 
     const char* Log::LogLevelToStr(LogLevel level)
@@ -457,11 +441,17 @@ namespace simple_logger
 
     std::string Log::GetModuleName(int module)
     {
-        if (auto itr = modulesMap.find(module); itr != modulesMap.end()) {
-            return itr->second;
-        }
+        std::lock_guard<std::mutex> lock(m_moduleMutex);
+        auto itr = m_modulesMap.find(module); 
+        return itr != m_modulesMap.end() ? itr->second : "";
+    }
 
-        return "";
-    } 
+    std::string Log::PopLogStr()
+    {
+        std::lock_guard<std::mutex> lock(m_queMutex);
+        std::string logStr = std::move(m_logQue.front());
+        m_logQue.pop();
+        return logStr;
+    }
 }
 

@@ -28,12 +28,22 @@
 #include <unordered_set>
 #include "Formatter.h"
 
+// used with module level print micro to simplify coding, for example:
+// #define EXAMPLE_DEBUG(fmt, ...) DBG_DEBUG(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), FORMAT(fmt, ##__VA_ARGS__))
+// EXAMPLE_DEBUG("This is a print example. str={}", "test");
+// see ../example/Example.cpp for more detail.
+#define DBG_DEBUG(log, mod, logStr) log.Write(simple_logger::LogLevel::Debug, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
+#define DBG_INFO(log, mod, logStr) log.Write(simple_logger::LogLevel::Info, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
+#define DBG_WARN(log, mod, logStr) log.Write(simple_logger::LogLevel::Warn, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
+#define DBG_ERROR(log, mod, logStr) log.Write(simple_logger::LogLevel::Error, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
+#define DBG_FATAL(log, mod, logStr) log.Write(simple_logger::LogLevel::Fatal, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
 
-#define DBG_TRACE(log, fmt, ...) log.WriteLine(LogLevel::Debug, 0, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-#define DBG_INFO(log, fmt, ...) log.WriteLine(LogLevel::Info, 0, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-#define DBG_WARN(log, fmt, ...) log.WriteLine(LogLevel::Warn, 0, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-#define DBG_ERROR(log, fmt, ...) log.WriteLine(LogLevel::Error, 0, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-#define DBG_FATAL(log, fmt, ...) log.WriteLine(LogLevel::Fatal, 0, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+// used directly.
+//#define DBG_DEBUG(log, mod, fmt, ...) log.WriteLine(LogLevel::Debug, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+//#define DBG_INFO(log, mod, fmt, ...) log.WriteLine(LogLevel::Info, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+//#define DBG_WARN(log, mod, fmt, ...) log.WriteLine(LogLevel::Warn, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+//#define DBG_ERROR(log, mod, fmt, ...) log.WriteLine(LogLevel::Error, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+//#define DBG_FATAL(log, mod, fmt, ...) log.WriteLine(LogLevel::Fatal, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
 
 // micro definition for time performent evaluation 
 #define START_TIME() Now _begin = GetCurrentTime();
@@ -105,7 +115,7 @@ namespace simple_logger
         void SetLogSwitchOn(LogLevel level);
         void SetLogSwitchOff(LogLevel level);
         void SetDetailMode(bool enable);
-        bool GetDetailMode() const;
+        bool IsDetailMode() const;
         void SetColorfulFont(bool enable);
         bool IsColorfulFont() const;
 
@@ -115,31 +125,30 @@ namespace simple_logger
         void ClearAllModule();
 
         void AddAndFilter(const std::string& filterString);
-        void AddAndFilter(const std::list<std::string>& filterList);
+        void AddAndFilter(const std::unordered_set<std::string>& filterList);
         void ClearAndFilter(const std::string& filterString);
-        void ClearAndFilter(const std::list<std::string>& filterList);
+        void ClearAndFilter(const std::unordered_set<std::string>& filterList);
         void ClearAndFilter();
         
         void AddOrFilter(const std::string& filterString);
-        void AddOrFilter(const std::list<std::string>& filterList);
+        void AddOrFilter(const std::unordered_set<std::string>& filterList);
         void ClearOrFilter(const std::string& filterString);
-        void ClearOrFilter(const std::list<std::string>& filterList);
+        void ClearOrFilter(const std::unordered_set<std::string>& filterList);
         void ClearOrFilter();
 
         void AddModuleFilter(int module);
-        void AddModuleFilter(const std::list<int>& moduleList);
+        void AddModuleFilter(const std::unordered_set<int>& moduleList);
         void ClearModuleFilter(int module);
-        void ClearModuleFilter(const std::list<int>& moduleList);
+        void ClearModuleFilter(const std::unordered_set<int>& moduleList);
         void ClearModuleFilter();
 
         void ClearAllFilter();
 
-        void SetUserWriter(std::shared_ptr<UserDefinedWriter>& userWriter);
-        void SetRemoteWriter(std::shared_ptr<UserDefinedWriter>& remoteWriter);
+        void SetUserWriter(std::shared_ptr<UserDefinedWriter>& m_userWriter);
+        void SetRemoteWriter(std::shared_ptr<UserDefinedWriter>& m_remoteWriter);
         bool IsLogQueEmpty() const;
         
-        void Write(LogLevel level, int module, const char* fileName, int line, const char* funcName, std::thread::id threadId, const std::string& msg);
-        void WriteLine(LogLevel level, int module, const char* fileName, int line, const char* funcName, std::thread::id threadId, const std::string& msg);
+        void Write(LogLevel level, int module, const char* fileName, int line, const char* funcName, std::thread::id threadId, const std::string& msg, WriteMode writeMode = WriteMode::Newline);
 
     private:
         std::string FormatLog(LogLevel level, int module, const std::string& fileName, int line, const std::string& funcName, uint threadId, const std::string& info);
@@ -159,31 +168,33 @@ namespace simple_logger
         void UpdateCurrentDate(const std::string& currentTime);
 
         std::string GetModuleName(int module);
+        std::string PopLogStr();
 
     private:
-        uint outputFlag = static_cast<uint>(OutputType::Console);
-        int logFlag = (uint)LogLevel::Info | (uint)LogLevel::Warn | (uint)LogLevel::Error | (uint)LogLevel::Fatal;
-        bool detailMode = true;
-        bool exit = false;
-        bool dateChanged = false;
-        bool colorfulFont = true;          // only use in console terminal.
+        uint m_outputFlag = static_cast<uint>(OutputType::LogFile);
+        int m_logFlag = (uint)LogLevel::Info | (uint)LogLevel::Warn | (uint)LogLevel::Error | (uint)LogLevel::Fatal;
+        bool m_detailMode = true;
+        bool m_exit = false;
+        bool m_dateChanged = false;
+        bool m_colorfulFont = true;          // only use in console terminal.
         
-        std::string logDir;
-        std::string logFileName;
-        std::string currentDate;
-        std::queue<std::string> logQue;
-        std::thread writerThread;
-        std::mutex writeMutex;
-        std::mutex queMutex;
-        std::mutex filterMutex;
-        std::unordered_map<int, std::string> modulesMap;
-        std::list<std::string> andFilters;
-        std::list<std::string> orFilters;
-        std::unordered_set<int> moduleFilters;
+        std::string m_logDir;
+        std::string m_logFileName;
+        std::string m_currentDate;
+        std::queue<std::string> m_logQue;
+        std::thread m_writerThread;
+        std::mutex m_writeMutex;
+        std::mutex m_queMutex;
+        std::mutex m_filterMutex;
+        std::mutex m_moduleMutex;
+        std::unordered_map<int, std::string> m_modulesMap;
+        std::unordered_set<std::string> m_andFilters;
+        std::unordered_set<std::string> m_orFilters;
+        std::unordered_set<int> m_moduleFilters;
 
-        std::ofstream writer;
-        std::shared_ptr<UserDefinedWriter> userWriter = nullptr;
-        std::shared_ptr<UserDefinedWriter> remoteWriter = nullptr;
+        std::ofstream m_fileWriter;
+        std::shared_ptr<UserDefinedWriter> m_userWriter = nullptr;
+        std::shared_ptr<UserDefinedWriter> m_remoteWriter = nullptr;
     };
 };
 
