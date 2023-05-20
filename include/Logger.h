@@ -85,7 +85,7 @@ namespace simple_logger
     {
     public:
         virtual ~UserDefinedWriter() = default;
-    public:        
+    public:
         virtual void Write(const std::string& str) = 0;
         virtual void Close() {};
     };
@@ -168,11 +168,11 @@ namespace simple_logger
 
         std::string GetModuleName(int module);
         std::string PopLogStr();
-        std::string GetFontColor(char levelFlag);
+        const char* GetFontColor(char levelFlag);
 
     private:
         uint m_outputFlag = static_cast<uint>(OutputType::LogFile);
-        int m_logFlag = (uint)LogLevel::Info | (uint)LogLevel::Warn | (uint)LogLevel::Error | (uint)LogLevel::Fatal;
+        uint m_logFlag = (uint)LogLevel::Info | (uint)LogLevel::Warn | (uint)LogLevel::Error | (uint)LogLevel::Fatal;
         bool m_detailMode = true;
         bool m_exit = false;
         bool m_dateChanged = false;

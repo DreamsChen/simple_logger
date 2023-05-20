@@ -477,7 +477,7 @@ namespace simple_logger
         }
     }
 
-    std::string Log::GetFontColor(char levelFlag)
+    const char* Log::GetFontColor(char levelFlag)
     {
         switch (levelFlag) {
             case 'D':   // debug level
