@@ -56,7 +56,27 @@ namespace simple_logger
 
 #define FORMAT simple_logger::format
 #else
-#define FORMAT std::format    
+
+#include <format>
+#include <type_traits>
+#include <concepts>
+
+#define FORMAT std::format
+
+    template <typename T> 
+    concept EnumType = std::is_enum_v<T>;
+
+    template <EnumType EnumValue, typename CharType>
+    struct std::formatter<EnumValue, CharType> : std::formatter<int, CharType>
+    {
+        template <typename FormatContext>
+        typename FormatContext::iterator format(const EnumValue& v, FormatContext& formatContext)
+        {
+            typename FormatContext::iterator itr = std::formatter<int, CharType>().format(static_cast<int>(v), formatContext);
+            return itr;
+        }
+    };
+
 #endif
 }
 #endif // !FORMATTER_H
