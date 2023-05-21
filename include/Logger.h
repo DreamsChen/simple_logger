@@ -39,11 +39,11 @@
 #define DBG_FATAL(log, mod, logStr) log.Write(simple_logger::LogLevel::Fatal, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
 
 // used directly.
-#define LOG_DEBUG(log, mod, fmt, ...) log.WriteLine(simple_logger::LogLevel::Debug, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-#define LOG_INFO(log, mod, fmt, ...) log.WriteLine(simple_logger::LogLevel::Info, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-#define LOG_WARN(log, mod, fmt, ...) log.WriteLine(simple_logger::LogLevel::Warn, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-#define LOG_ERROR(log, mod, fmt, ...) log.WriteLine(simple_logger::LogLevel::Error, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
-#define LOG_FATAL(log, mod, fmt, ...) log.WriteLine(simple_logger::LogLevel::Fatal, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define LOG_DEBUG(log, mod, fmt, ...) log.Write(simple_logger::LogLevel::Debug, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define LOG_INFO(log, mod, fmt, ...) log.Write(simple_logger::LogLevel::Info, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define LOG_WARN(log, mod, fmt, ...) log.Write(simple_logger::LogLevel::Warn, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define LOG_ERROR(log, mod, fmt, ...) log.Write(simple_logger::LogLevel::Error, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define LOG_FATAL(log, mod, fmt, ...) log.Write(simple_logger::LogLevel::Fatal, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
 
 // micro definition for time performent evaluation 
 #define START_TIME() simple_logger::Now _begin = simple_logger::GetCurrentTime();

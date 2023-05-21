@@ -16,7 +16,7 @@ This is a simple logger lib writen with C++, it is small, very easy to used, and
 - Support to use in multiple threads environment.
 - Support C++20's formatted function, it is modern formatter, convenient to print multiple parameters. If not support C++20's formatted function in user's compliler environment, the alternative formatted function is available, can be used in similary usage(but fewer functions, only the simplest function is support).
 - Support multiple log filters, include module filters, AND filters, OR filters.
-- Support colorful font when logs are printted in console.
+- Support colorful font when logs are printed in console.
 - Writen with standard C++, supply multiple os platforms, include linux, windows, etc.
 
 ## Examples
