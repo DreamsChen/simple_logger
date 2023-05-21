@@ -17,13 +17,13 @@
 namespace simple_logger
 {
 #ifndef HAS_STD_FORMAT
-    void FormatExpand(std::stringstream& s, const char* fmt)
+    void FormatExpand(std::stringstream& ss, const char* fmt)
     {
         while (*fmt) {
             if (*fmt == '{' && *(++fmt) == '}') {
                 throw std::runtime_error("Invalid fromat string: missing arguments");
             }
-            s << *fmt++;
+            ss << *fmt++;
         }
     }
 #endif

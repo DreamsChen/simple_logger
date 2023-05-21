@@ -19,8 +19,11 @@
 # pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
+#include <type_traits>
+
 #ifdef HAS_STD_FORMAT
 #include <format>
+#include <concepts>
 #else
 #include <string>
 #include <sstream>
@@ -28,11 +31,41 @@
 
 namespace simple_logger
 {
-#ifndef HAS_STD_FORMAT
+
+#ifdef HAS_STD_FORMAT
+
+#define FORMAT std::format
+
+    template <typename T>
+    concept EnumType = std::is_enum_v<T>;
+
+    template <EnumType EnumValue, typename CharType>
+    struct std::formatter<EnumValue, CharType> : std::formatter<int, CharType>
+    {
+        template <typename FormatContext>
+        typename FormatContext::iterator format(const EnumValue& v, FormatContext& formatContext)
+        {
+            typename FormatContext::iterator itr = std::formatter<int, CharType>().format(static_cast<int>(v), formatContext);
+            return itr;
+        }
+    };
+
+
+#else
+
+#define FORMAT simple_logger::format
+
     void FormatExpand(std::stringstream& s, const char* fmt);
 
+    template<typename T, typename = typename std::enable_if<std::is_enum<T>::value>::type>
+    inline std::stringstream& operator<<(std::stringstream& ss, T& value)
+    {
+        ss << static_cast<int>(value);
+        return ss;
+    }
+
     template<typename T, typename... Args>
-    void FormatExpand(std::stringstream& ss, const char* fmt, T value, Args... args)
+    void FormatExpand(std::stringstream& ss, const char* fmt, T& value, Args... args)
     {
         while (*fmt) {
             if (*fmt == '{' && *(++fmt) == '}') {
@@ -49,33 +82,10 @@ namespace simple_logger
     template<typename ... Args>
     std::string format(const char* fmt, Args ... args)
     {
-        std::stringstream s;
-        FormatExpand(s, fmt, args...);
-        return s.str();
+        std::stringstream ss;
+        FormatExpand(ss, fmt, args...);
+        return ss.str();
     }
-
-#define FORMAT simple_logger::format
-#else
-
-#include <format>
-#include <type_traits>
-#include <concepts>
-
-#define FORMAT std::format
-
-    template <typename T> 
-    concept EnumType = std::is_enum_v<T>;
-
-    template <EnumType EnumValue, typename CharType>
-    struct std::formatter<EnumValue, CharType> : std::formatter<int, CharType>
-    {
-        template <typename FormatContext>
-        typename FormatContext::iterator format(const EnumValue& v, FormatContext& formatContext)
-        {
-            typename FormatContext::iterator itr = std::formatter<int, CharType>().format(static_cast<int>(v), formatContext);
-            return itr;
-        }
-    };
 
 #endif
 }

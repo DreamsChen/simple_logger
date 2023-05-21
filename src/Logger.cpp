@@ -16,7 +16,7 @@
 
 #include <filesystem>
 #include <iostream>
-#include <strstream>
+#include <sstream>
 #include "DateTime.h"
 
 #ifdef _MSC_VER 
@@ -318,10 +318,10 @@ namespace simple_logger
         UpdateCurrentDate(currentTime);
 
         if (!m_detailMode) {
-            return format("{} [{}] [{}]: {}", currentTime, LogLevelToStr(level), GetModuleName(module), info);
+            return FORMAT("{} [{}] [{}]: {}", currentTime, LogLevelToStr(level), GetModuleName(module), info);
         }
 
-        return format("{} [{}] [{}] [{}(line: {}, method: {}, thread: {})]: {}",
+        return FORMAT("{} [{}] [{}] [{}(line: {}, method: {}, thread: {})]: {}",
             currentTime, LogLevelToStr(level), GetModuleName(module), fileName.substr(fileName.find_last_of(PATH_SEPERATOR) + 1), line, funcName, threadId, info);
     }
 

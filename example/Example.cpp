@@ -20,6 +20,8 @@
 enum class Module 
 {
     Example = 0,
+    App,
+    MaxNum = 0xff,
 };
 
 class ExampleContext
@@ -182,11 +184,11 @@ int main()
     int loopCount = 10;
     std::thread t1([&log, loopCount]() {
         for (int i = 0; i < loopCount; ++i) {
-            EXAMPLE_DEBUG("######T1: hello logger, i={}", i);
+            EXAMPLE_DEBUG("######T1: hello logger, i={}, Module::App={}", i, Module::App);
             EXAMPLE_INFO("######T1: hello logger, i={}", i);
             EXAMPLE_WARN("######T1: hello logger, i={}", i);
-            EXAMPLE_ERROR("######T1: hello logger, i={}", std::string("sss"));
-            EXAMPLE_FATAL("######T1: hello logger, i={}", 3.1415);
+            EXAMPLE_ERROR("######T1: hello logger, string={}", std::string("test"));
+            EXAMPLE_FATAL("######T1: hello logger, pi={}", 3.1415);
         }
         });
 
