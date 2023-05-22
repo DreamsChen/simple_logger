@@ -113,6 +113,16 @@ namespace simple_logger
         return m_colorfulFont;
     }
 
+    void Log::SetReverseFilter(bool enable)
+    {
+        m_reverseFilter = enable;
+    }
+
+    bool Log::IsReverseFilter() const
+    {
+        return m_reverseFilter;
+    }
+
     void Log::AddModule(int module, const std::string& name)
     {
         std::lock_guard<std::mutex> lock(m_moduleMutex);
@@ -243,7 +253,8 @@ namespace simple_logger
         }
 
         std::lock_guard<std::mutex> lock(m_filterMutex);
-        return m_moduleFilters.find(module) != m_moduleFilters.end();
+        auto itr = m_moduleFilters.find(module);
+        return m_reverseFilter ? itr == m_moduleFilters.end() : itr != m_moduleFilters.end();
     }
 
     bool Log::NeedFilterWithAndRule(const std::string& msg)
@@ -262,7 +273,7 @@ namespace simple_logger
             }
         }
 
-        return !found;
+        return m_reverseFilter ? found : !found;
     }
 
     bool Log::NeedFilterWithOrRule(const std::string& msg)
@@ -281,7 +292,7 @@ namespace simple_logger
             }
         }
 
-        return found;
+        return m_reverseFilter ? !found : found;
     }
 
     bool Log::NeedFilter(int module, const std::string& msg)

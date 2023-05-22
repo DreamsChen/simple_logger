@@ -32,11 +32,11 @@
 // #define EXAMPLE_DEBUG(fmt, ...) DBG_DEBUG(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), FORMAT(fmt, ##__VA_ARGS__))
 // EXAMPLE_DEBUG("This is a print example. str={}", "test");
 // see ../example/Example.cpp for more detail.
-#define DBG_DEBUG(log, mod, logStr) log.Write(simple_logger::LogLevel::Debug, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
-#define DBG_INFO(log, mod, logStr) log.Write(simple_logger::LogLevel::Info, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
-#define DBG_WARN(log, mod, logStr) log.Write(simple_logger::LogLevel::Warn, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
-#define DBG_ERROR(log, mod, logStr) log.Write(simple_logger::LogLevel::Error, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
-#define DBG_FATAL(log, mod, logStr) log.Write(simple_logger::LogLevel::Fatal, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), logStr)
+#define DBG_DEBUG(log, mod, fmt, ...) log.Write(simple_logger::LogLevel::Debug, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_INFO(log, mod, fmt, ...) log.Write(simple_logger::LogLevel::Info, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_WARN(log, mod, fmt, ...) log.Write(simple_logger::LogLevel::Warn, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_ERROR(log, mod, fmt, ...) log.Write(simple_logger::LogLevel::Error, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
+#define DBG_FATAL(log, mod, fmt, ...) log.Write(simple_logger::LogLevel::Fatal, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
 
 // used directly.
 #define LOG_DEBUG(log, mod, fmt, ...) log.Write(simple_logger::LogLevel::Debug, mod, __FILE__, __LINE__, __FUNCTION__, std::this_thread::get_id(), FORMAT(fmt, ##__VA_ARGS__))
@@ -114,6 +114,8 @@ namespace simple_logger
         bool IsDetailMode() const;
         void SetColorfulFont(bool enable);
         bool IsColorfulFont() const;
+        void SetReverseFilter(bool enable);
+        bool IsReverseFilter() const;
 
         void AddModule(int module, const std::string& name);
         void AddModule(const std::unordered_map<int, std::string>& modules);
@@ -176,7 +178,8 @@ namespace simple_logger
         bool m_detailMode = true;
         bool m_exit = false;
         bool m_dateChanged = false;
-        bool m_colorfulFont = true;          // only use in console terminal.
+        bool m_colorfulFont = true;     // only use in console terminal.
+        bool m_reverseFilter = false;   // if m_reverseFilter == true, only the logs that match filters are printed.
         
         std::string m_logDir;
         std::string m_logFileName;

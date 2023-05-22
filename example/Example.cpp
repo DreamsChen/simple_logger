@@ -75,11 +75,11 @@ private:
 };
 
 // define print micro of module level to simplify usage
-#define EXAMPLE_DEBUG(fmt, ...) DBG_DEBUG(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), FORMAT(fmt, ##__VA_ARGS__))
-#define EXAMPLE_INFO(fmt, ...) DBG_INFO(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), FORMAT(fmt, ##__VA_ARGS__))
-#define EXAMPLE_WARN(fmt, ...) DBG_WARN(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), FORMAT(fmt, ##__VA_ARGS__))
-#define EXAMPLE_ERROR(fmt, ...) DBG_ERROR(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), FORMAT(fmt, ##__VA_ARGS__))
-#define EXAMPLE_FATAL(fmt, ...) DBG_FATAL(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), FORMAT(fmt, ##__VA_ARGS__))
+#define EXAMPLE_DEBUG(fmt, ...) DBG_DEBUG(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), fmt, ##__VA_ARGS__)
+#define EXAMPLE_INFO(fmt, ...) DBG_INFO(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), fmt, ##__VA_ARGS__)
+#define EXAMPLE_WARN(fmt, ...) DBG_WARN(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), fmt, ##__VA_ARGS__)
+#define EXAMPLE_ERROR(fmt, ...) DBG_ERROR(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), fmt, ##__VA_ARGS__)
+#define EXAMPLE_FATAL(fmt, ...) DBG_FATAL(ExampleContext::GetInstance().GetLogger(), ExampleContext::GetInstance().GetModuleValue(), fmt, ##__VA_ARGS__)
 
 
 // user defined writer example:
