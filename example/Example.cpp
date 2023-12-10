@@ -60,7 +60,7 @@ public:
     }
 
 private:
-    ExampleContext() : m_log(std::filesystem::current_path().generic_string(), "test.log") {};
+    ExampleContext() : m_log(std::filesystem::current_path().generic_string().c_str(), "test.log") {};
     ExampleContext(const ExampleContext&) = delete;
     ExampleContext(ExampleContext&&) = delete;
     ExampleContext& operator=(const ExampleContext&) = delete;
@@ -173,7 +173,7 @@ int main()
 
 
     simple_logger::Log& log = ExampleContext::GetInstance().GetLogger();
-    log.SetOutputTypeOn(simple_logger::OutputType::Console);
+    //log.SetOutputTypeOn(simple_logger::OutputType::Console);
     //log.SetOutputTypeOff(simple_logger::OutputType::Console);
     log.SetLogSwitchOn(simple_logger::LogLevel::Debug);
     log.SetDetailMode(true);
@@ -181,7 +181,8 @@ int main()
     //std::shared_ptr<simple_logger::UserDefinedWriter> writer = std::make_shared<MyWriter>();
     //log.SetUserWriter(writer);
 
-    int loopCount = 10;
+    int loopCount = 100000;
+    START_TIME();
     std::thread t1([&log, loopCount]() {
         for (int i = 0; i < loopCount; ++i) {
             EXAMPLE_DEBUG("######T1: hello logger, i={}, Module::App={}", i, Module::App);
@@ -202,9 +203,21 @@ int main()
         }
         });
 
+    std::thread t3([&log, loopCount]() {
+        for (int i = 0; i < loopCount; ++i) {
+            EXAMPLE_DEBUG("$$$$$$T3: hello logger, i={}", i);
+            EXAMPLE_INFO("$$$$$$T3: hello logger, i={}", i);
+            EXAMPLE_WARN("$$$$$$T3: hello logger, i={}", i);
+            EXAMPLE_ERROR("$$$$$$T3: hello logger, i={}", std::string("sss"));
+            EXAMPLE_FATAL("$$$$$$T3: hello logger, i={}", 3.1415);
+        }
+        });
+
     t1.join();
     t2.join();
-
+    t3.join();
+    END_TIME();
+    USED_TIME("Used time:");
     while (!log.IsLogQueEmpty()) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
