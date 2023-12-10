@@ -69,8 +69,6 @@ namespace simple_logger
         Newline,
     };
 
-    using uint = unsigned int;
-
     class UserDefinedWriter
     {
     public:

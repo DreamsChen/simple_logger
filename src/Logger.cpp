@@ -114,19 +114,19 @@ namespace simple_logger
         std::string GetModuleName(int module) const;
         const char* GetFontColor(char levelFlag) const;
 
-    public:
-        bool m_detailMode = true;
-        bool m_exit = false;
-        bool m_dateChanged = false;
-        bool m_colorfulFont = true;     // only use in console terminal.
-        bool m_reverseFilter = false;   // if m_reverseFilter == true, only the logs that match filters are printed.
-
+    private:
         std::string m_logDir;
         std::string m_logFileName;
         std::string m_currentDate;
 
         uint32_t m_outputFlag;
         uint32_t m_logLevelFlag;
+
+        bool m_detailMode = true;
+        bool m_exit = false;
+        bool m_dateChanged = false;
+        bool m_colorfulFont = true;     // only use in console terminal.
+        bool m_reverseFilter = false;   // if m_reverseFilter == true, only the logs that match filters are printed.
 
         std::queue<std::string> m_logQue;
         std::thread m_writerThread;
@@ -465,16 +465,17 @@ namespace simple_logger
 
     void Log::LogImpl::WritingWorker()
     {
+        std::unique_lock<std::mutex> locker(m_queMutex, std::defer_lock);
         while (!m_exit) {
             if (m_logQue.empty()) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(300));
                 continue;
             }
 
-            std::unique_lock<std::mutex> lock(m_queMutex);
+            locker.lock();
             std::string logStr = std::move(m_logQue.front());
             m_logQue.pop();
-            lock.unlock();
+            locker.unlock();
 
             // Only one writing thread, no need to lock for the below action.
             WriteToConsole(logStr);
@@ -612,7 +613,7 @@ namespace simple_logger
     }
 
 
-    // Log
+    // Log public function implementation.
     Log::Log(const char* dir, const char* fileName, uint32_t outputFlag, uint32_t logLevelFlag, bool detailMode) :
         m_impl(std::make_unique<Log::LogImpl>(dir, fileName, outputFlag, logLevelFlag, detailMode))
     {
