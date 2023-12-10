@@ -75,8 +75,9 @@ namespace simple_logger
             }
             ss << *fmt++;
         }
-
-        throw std::logic_error("extra arguments provided to format");
+#ifndef NDEBUG
+        throw std::logic_error("Invalid formatting: too much arguments are provided to format");
+#endif
     }
 
     template<typename ... Args>

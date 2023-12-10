@@ -60,7 +60,7 @@ public:
     }
 
 private:
-    ExampleContext() : m_log(std::filesystem::current_path().generic_string().c_str(), "test.log") {};
+    ExampleContext() : m_log("./log", "test.log") {};
     ExampleContext(const ExampleContext&) = delete;
     ExampleContext(ExampleContext&&) = delete;
     ExampleContext& operator=(const ExampleContext&) = delete;
@@ -216,10 +216,12 @@ int main()
     t1.join();
     t2.join();
     t3.join();
+
+    while (!log.IsLogQueEmpty()) {
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
+
     END_TIME();
     USED_TIME("Used time:");
-    while (!log.IsLogQueEmpty()) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
 }
 
