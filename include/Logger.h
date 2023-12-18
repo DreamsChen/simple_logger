@@ -78,6 +78,12 @@ namespace simple_logger
         virtual void Close() {};
     };
 
+    template <class ...Args>
+    uint32_t MakeFlag(Args... args)
+    {
+        return (... | static_cast<int>(args));
+    }
+
     class Log
     {
     public:

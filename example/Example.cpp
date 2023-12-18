@@ -60,7 +60,7 @@ public:
     }
 
 private:
-    ExampleContext() : m_log("./log", "test.log") {};
+    ExampleContext() : m_log("./log", "test.log", simple_logger::MakeFlag(simple_logger::OutputType::Console, simple_logger::OutputType::LogFile)) {};
     ExampleContext(const ExampleContext&) = delete;
     ExampleContext(ExampleContext&&) = delete;
     ExampleContext& operator=(const ExampleContext&) = delete;

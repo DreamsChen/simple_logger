@@ -22,7 +22,7 @@ namespace simple_logger
         while (*fmt) {
             if (*fmt == '{' && *(++fmt) == '}') {
 #ifndef NDEBUG
-                throw std::runtime_error("Invalid fromat string: missing arguments");
+                throw std::runtime_error("Invalid format string: missing arguments");
 #else
                 ++fmt;
                 ++fmt;
