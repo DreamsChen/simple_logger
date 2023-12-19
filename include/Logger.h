@@ -88,7 +88,7 @@ namespace simple_logger
     {
     public:
         Log(const char* dir, const char* fileName, uint32_t outputFlag = MakeFlag(OutputType::LogFile), uint32_t logLevelFlag = MakeFlag(LogLevel::Info, LogLevel::Warn, LogLevel::Error, LogLevel::Fatal), bool detailMode = true);
-        Log(std::string_view dir, std::string_view fileName, uint32_t outputFlag = (uint32_t)OutputType::LogFile, uint32_t logLevelFlag = (uint32_t)LogLevel::Info | (uint32_t)LogLevel::Warn | (uint32_t)LogLevel::Error | (uint32_t)LogLevel::Fatal, bool detailMode = true);
+        Log(std::string_view dir, std::string_view fileName, uint32_t outputFlag = MakeFlag(OutputType::LogFile), uint32_t logLevelFlag = MakeFlag(LogLevel::Info, LogLevel::Warn, LogLevel::Error, LogLevel::Fatal), bool detailMode = true);
 
         Log(const Log& log) = delete;
         Log(const Log&& log) = delete;
