@@ -15,27 +15,24 @@
 #ifndef FORMATTER_H
 #define FORMATTER_H
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
-#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
-
 #include <type_traits>
 
-#ifdef HAS_STD_FORMAT
+#if __has_include(<format>)
 #include <format>
 #include <concepts>
+
+#define HAS_STD_FORMAT
+#define FORMAT std::format
 #else
 #include <string>
 #include <sstream>
+
+#define FORMAT simple_logger::format
 #endif
 
 namespace simple_logger
 {
-
 #ifdef HAS_STD_FORMAT
-
-#define FORMAT std::format
-
     template <typename T>
     concept EnumType = std::is_enum_v<T>;
 
@@ -49,12 +46,7 @@ namespace simple_logger
             return itr;
         }
     };
-
-
 #else
-
-#define FORMAT simple_logger::format
-
     void FormatExpand(std::stringstream& s, const char* fmt);
 
     template<typename T, typename = typename std::enable_if<std::is_enum<T>::value>::type>
@@ -87,7 +79,6 @@ namespace simple_logger
         FormatExpand(ss, fmt, args...);
         return ss.str();
     }
-
 #endif
 }
 #endif // !FORMATTER_H

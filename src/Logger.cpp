@@ -124,6 +124,7 @@ namespace simple_logger
 
         bool m_detailMode = true;
         bool m_exit = false;
+        bool m_stop = false;
         bool m_dateChanged = false;
         bool m_colorfulFont = true;     // only use in console terminal.
         bool m_reverseFilter = false;   // if m_reverseFilter == true, only the logs that match filters are printed.
@@ -448,7 +449,7 @@ namespace simple_logger
 
     void Log::LogImpl::Write(LogLevel level, WriteMode writeMode, int module, const char* fileName, int line, const char* funcName, uint64_t threadId, const std::string& msg)
     {
-        if (m_exit || !IsLogSwitchOn(level)) {
+        if (m_stop || !IsLogSwitchOn(level)) {
             return;
         }
 
@@ -468,6 +469,10 @@ namespace simple_logger
         std::unique_lock<std::mutex> locker(m_queMutex, std::defer_lock);
         while (!m_exit) {
             if (m_logQue.empty()) {
+                if (m_stop) {
+                    break;
+                }
+
                 std::this_thread::sleep_for(std::chrono::milliseconds(300));
                 continue;
             }
@@ -576,7 +581,7 @@ namespace simple_logger
             return;
         }
 
-        m_exit = true;
+        m_stop = true;
 
         if (m_writerThread.joinable()) {
             m_writerThread.join();
@@ -592,6 +597,8 @@ namespace simple_logger
         if (m_remoteWriter != nullptr) {
             m_remoteWriter->Close();
         }
+
+        m_exit = true;
     }
 
     const char* Log::LogImpl::GetFontColor(char levelFlag) const

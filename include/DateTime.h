@@ -15,10 +15,6 @@
 #ifndef DATA_TIME_H
 #define DATA_TIME_H
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
-#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
-
 #include <string>
 #include <chrono>
 

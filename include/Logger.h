@@ -15,10 +15,6 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
-#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
-
 #include <thread>
 #include <memory>
 #include <string_view>
@@ -150,7 +146,6 @@ namespace simple_logger
     private:
         class LogImpl;
         std::unique_ptr<LogImpl> m_impl;
-
     };
 };
 

@@ -181,7 +181,7 @@ int main()
     //std::shared_ptr<simple_logger::UserDefinedWriter> writer = std::make_shared<MyWriter>();
     //log.SetUserWriter(writer);
 
-    int loopCount = 100000;
+    int loopCount = 10;
     START_TIME();
     std::thread t1([&log, loopCount]() {
         for (int i = 0; i < loopCount; ++i) {

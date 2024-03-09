@@ -1,17 +1,7 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(simple_logger_example)
 
-include(CheckIncludeFileCXX)
-
 set(CMAKE_CXX_STANDARD 20)
-
-CHECK_INCLUDE_FILE_CXX(format HAS_FORMAT)
-message(HAS_FORMAT=${HAS_FORMAT})
-
-if(${HAS_FORMAT})
-    message("HAS_FORMAT=${HAS_FORMAT}, add HAS_STD_FORMAT definition")
-    add_definitions(-DHAS_STD_FORMAT)
-endif()
 
 set(SRC 
     ${PROJECT_SOURCE_DIR}/../src/DateTime.cpp
